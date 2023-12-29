@@ -1,19 +1,26 @@
 package com.xcelk.guessinggame
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 
 class GameViewModel: ViewModel() {
-    val words = listOf("Android", "Activity", "Fragment")
-    val secretWord = words.random().uppercase()
-    var secretWordDisplay = ""
-    var correctGuesses = ""
-    var incorrectGuesses = ""
-    var livesLeft = 8
+    private val words = listOf("Android", "Activity", "Fragment")
+    private val secretWord = words.random().uppercase()
+    private val _secretWordDisplay = MutableLiveData("")
+    val secretWordDisplay: LiveData<String> get() = _secretWordDisplay
+    private var correctGuesses = ""
+    private val _incorrectGuesses = MutableLiveData("")
+    val incorrectGuesses: LiveData<String> get() = _incorrectGuesses
+    private val _livesLeft = MutableLiveData(8)
+    val livesLeft: LiveData<Int> get() = _livesLeft
+    private val _gameOver = MutableLiveData(false)
+    val gameOver: LiveData<Boolean> get() = _gameOver
 
     init {
-        secretWordDisplay = deriveSecretWordDisplay()
+        _secretWordDisplay.value = deriveSecretWordDisplay()
     }
 
-    public fun deriveSecretWordDisplay() : String {
+    private fun deriveSecretWordDisplay() : String {
         var display  = ""
         secretWord.forEach{
             display += checkLetter(it.toString())
@@ -21,27 +28,28 @@ class GameViewModel: ViewModel() {
         return display
     }
 
-    public fun checkLetter(str: String) = when (correctGuesses.contains(str)){
+    private fun checkLetter(str: String) = when (correctGuesses.contains(str)){
         true -> str
         false -> "_"
     }
 
-    public fun makeGuess(guess: String){
+    fun makeGuess(guess: String){
         if(guess.length == 1){
             if(secretWord.contains(guess)){
                 correctGuesses += guess
-                secretWordDisplay = deriveSecretWordDisplay()
+                _secretWordDisplay.value = deriveSecretWordDisplay()
             } else {
-                incorrectGuesses += "$guess "
-                livesLeft--
+                _incorrectGuesses.value += "$guess "
+                _livesLeft.value = _livesLeft.value?.minus(1)
             }
+            if (isWon() || isLost())_gameOver.value = true
         }
     }
 
-    public fun isWon() = secretWord.equals(secretWordDisplay, true)
-    public fun isLost() = livesLeft <= 0
+    private fun isWon() = secretWord.equals(secretWordDisplay.value, true)
+    private fun isLost() = (livesLeft.value ?: 0) <= 0
 
-    public fun wonLostMessage() : String{
+    fun wonLostMessage() : String{
         var message = ""
         if (isWon()) message = "You Won!"
         else if (isLost()) message = "You Lost!"

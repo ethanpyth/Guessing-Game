@@ -37,6 +37,7 @@ class GameFragment : Fragment() {
         }
     }
 
+    @SuppressLint("SetTextI18n")
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -44,20 +45,31 @@ class GameFragment : Fragment() {
         // Inflate the layout for this fragment
         _binding = FragmentGameBinding.inflate(inflater, container, false)
         val view = binding.root
-        viewModel = ViewModelProvider(this).get(GameViewModel::class.java)
+        viewModel = ViewModelProvider(this)[GameViewModel::class.java]
 
-        updateScreen()
+        viewModel.incorrectGuesses.observe(viewLifecycleOwner) { newValue ->
+            binding.incorrectGuesses.text = "Incorrect guesses: $newValue"
+        }
+
+        viewModel.livesLeft.observe(viewLifecycleOwner) { newValue ->
+            binding.lives.text = "You have $newValue lives left"
+        }
+
+        viewModel.incorrectGuesses.observe(viewLifecycleOwner) { newValue ->
+            binding.word.text = newValue
+        }
+
+        viewModel.gameOver.observe(viewLifecycleOwner) { newValue ->
+            if (newValue) {
+                val action =
+                    GameFragmentDirections.actionGameFragmentToResultFragment(viewModel.wonLostMessage())
+                view.findNavController().navigate(action)
+            }
+        }
 
         binding.guessButton.setOnClickListener {
             viewModel.makeGuess(binding.guess.text.toString().uppercase())
             binding.guess.text = null
-
-            updateScreen()
-            if (viewModel.isWon() || viewModel.isLost()) {
-                val action = GameFragmentDirections
-                    .actionGameFragmentToResultFragment(viewModel.wonLostMessage())
-                view.findNavController().navigate(action)
-            }
         }
         return view
     }
@@ -65,13 +77,6 @@ class GameFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-    }
-
-    @SuppressLint("SetTextI18n")
-    fun updateScreen() {
-        binding.word.text = viewModel.secretWordDisplay
-        binding.lives.text = "You have ${viewModel.livesLeft} lives left."
-        binding.incorrectGuesses.text = "Incorrect guesses: ${viewModel.incorrectGuesses}"
     }
 
     companion object {
