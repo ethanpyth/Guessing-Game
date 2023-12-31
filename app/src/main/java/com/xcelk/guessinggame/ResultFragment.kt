@@ -27,8 +27,8 @@ class ResultFragment : Fragment() {
     private var _binding: FragmentResultBinding? = null
     private val binding get() = _binding!!
 
-    lateinit var viewModel: ResultViewModel
-    lateinit var viewModelFactory: ResultViewModelFactory
+    private lateinit var viewModel: ResultViewModel
+    private lateinit var viewModelFactory: ResultViewModelFactory
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,7 +41,7 @@ class ResultFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         // Inflate the layout for this fragment
         _binding = FragmentResultBinding.inflate(inflater, container, false)
         val view = binding.root
@@ -49,11 +49,10 @@ class ResultFragment : Fragment() {
         val result = ResultFragmentArgs.fromBundle(requireArguments()).result
 
         viewModelFactory = ResultViewModelFactory(result)
-        viewModel = ViewModelProvider(this, viewModelFactory).get(ResultViewModel::class.java)
+        viewModel = ViewModelProvider(this, viewModelFactory)[ResultViewModel::class.java]
+        binding.resultViewModel = viewModel
 
-        binding.wonLost.text = viewModel.result
-
-        binding.newGameButton.setOnClickListener() {
+        binding.newGameButton.setOnClickListener {
             view.findNavController().navigate(R.id.action_resultFragment_to_gameFragment)
         }
 

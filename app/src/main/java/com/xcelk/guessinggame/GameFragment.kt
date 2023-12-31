@@ -46,18 +46,9 @@ class GameFragment : Fragment() {
         _binding = FragmentGameBinding.inflate(inflater, container, false)
         val view = binding.root
         viewModel = ViewModelProvider(this)[GameViewModel::class.java]
+        binding.gameViewModel = viewModel
 
-        viewModel.incorrectGuesses.observe(viewLifecycleOwner) { newValue ->
-            binding.incorrectGuesses.text = "Incorrect guesses: $newValue"
-        }
-
-        viewModel.livesLeft.observe(viewLifecycleOwner) { newValue ->
-            binding.lives.text = "You have $newValue lives left"
-        }
-
-        viewModel.incorrectGuesses.observe(viewLifecycleOwner) { newValue ->
-            binding.word.text = newValue
-        }
+        binding.lifecycleOwner = viewLifecycleOwner
 
         viewModel.gameOver.observe(viewLifecycleOwner) { newValue ->
             if (newValue) {
