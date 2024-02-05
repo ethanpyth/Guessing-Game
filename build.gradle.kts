@@ -8,4 +8,7 @@ buildscript{
         val navVersion = "2.7.6"
         classpath("androidx.navigation:navigation-safe-args-gradle-plugin:$navVersion")
     }
+    repositories {
+        google()
+    }
 }

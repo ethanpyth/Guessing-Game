@@ -6,9 +6,27 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material.Button
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
+import androidx.compose.material.Text
+import androidx.compose.material.TextField
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.findNavController
-import com.xcelk.guessinggame.databinding.FragmentGameBinding
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -24,8 +42,7 @@ class GameFragment : Fragment() {
     // TODO: Rename and change types of parameters
     private var param1: String? = null
     private var param2: String? = null
-    private var _binding: FragmentGameBinding? = null
-    private val binding get() = _binding!!
+
     lateinit var viewModel: GameViewModel
 
 
@@ -43,31 +60,31 @@ class GameFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         // Inflate the layout for this fragment
-        _binding = FragmentGameBinding.inflate(inflater, container, false)
-        val view = binding.root
         viewModel = ViewModelProvider(this)[GameViewModel::class.java]
-        binding.gameViewModel = viewModel
-
-        binding.lifecycleOwner = viewLifecycleOwner
 
         viewModel.gameOver.observe(viewLifecycleOwner) { newValue ->
             if (newValue) {
                 val action =
                     GameFragmentDirections.actionGameFragmentToResultFragment(viewModel.wonLostMessage())
-                view.findNavController().navigate(action)
+                view?.findNavController()?.navigate(action)
             }
         }
 
-        binding.guessButton.setOnClickListener {
-            viewModel.makeGuess(binding.guess.text.toString().uppercase())
-            binding.guess.text = null
+        return ComposeView(requireContext()).apply {
+            setContent {
+                MaterialTheme{
+                    Surface{
+                        view?.let {
+                            GameFragmentContent(viewModel = viewModel)
+                        }
+                    }
+                }
+            }
         }
-        return view
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        _binding = null
     }
 
     companion object {
@@ -88,5 +105,69 @@ class GameFragment : Fragment() {
                     putString(ARG_PARAM2, param2)
                 }
             }
+    }
+}
+
+@Composable
+fun WordGuess(viewModel: GameViewModel){
+    val display = viewModel.secretWordDisplay.observeAsState()
+    display.value?.let {
+        Text(text = it, letterSpacing = 0.1.em, fontSize = 36.sp)
+    }
+}
+
+@Composable
+fun WordInputField(letter: String, onClick: (String) -> Unit){
+    TextField(value = letter, onValueChange = onClick, label = { Text(text = "Guess a letter")})
+}
+
+@Composable
+fun IncorrectGuessesText(viewModel: GameViewModel){
+    val incorrectgGuesses = viewModel.incorrectGuesses.observeAsState()
+    incorrectgGuesses.value?.let {
+        Text(text = stringResource(id = R.string.incorrect_guesses, it), textAlign = TextAlign.Left)
+    }
+}
+
+@Composable
+fun LivesLeftText(viewModel: GameViewModel){
+    val livesLeft = viewModel.livesLeft.observeAsState()
+    livesLeft.value?.let {
+        Text(text = stringResource(id = R.string.lives_left), textAlign = TextAlign.Left)
+    }
+}
+
+@Composable
+fun GuessButton(label: String, onClick: () -> Unit){
+    Button(onClick = onClick) {
+        Text(text = label)
+    }
+}
+
+@Composable
+fun FinishGameButton(label: String, onClick: () -> Unit){
+    Button(onClick = onClick) {
+        Text(text = label)
+    }
+}
+
+@Composable
+fun GameFragmentContent(viewModel: GameViewModel){
+    val guess = remember{ mutableStateOf("") }
+
+    Column(modifier =Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        WordGuess(viewModel)
+        IncorrectGuessesText(viewModel = viewModel)
+        WordInputField(guess.value){ guess.value = it }
+        LivesLeftText(viewModel = viewModel)
+        Row {
+            GuessButton(label = "Guess") {
+                viewModel.makeGuess(guess.value.uppercase())
+                guess.value = ""
+            }
+            FinishGameButton(label = "Finish Game") {
+                viewModel.finishGame()
+            }
+        }
     }
 }

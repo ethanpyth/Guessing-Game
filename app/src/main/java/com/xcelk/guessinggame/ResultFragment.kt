@@ -5,9 +5,20 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material.Button
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
+import androidx.compose.material.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.findNavController
-import com.xcelk.guessinggame.databinding.FragmentResultBinding
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -23,9 +34,6 @@ class ResultFragment : Fragment() {
     // TODO: Rename and change types of parameters
     private var param1: String? = null
     private var param2: String? = null
-
-    private var _binding: FragmentResultBinding? = null
-    private val binding get() = _binding!!
 
     private lateinit var viewModel: ResultViewModel
     private lateinit var viewModelFactory: ResultViewModelFactory
@@ -43,25 +51,26 @@ class ResultFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         // Inflate the layout for this fragment
-        _binding = FragmentResultBinding.inflate(inflater, container, false)
-        val view = binding.root
-
         val result = ResultFragmentArgs.fromBundle(requireArguments()).result
 
         viewModelFactory = ResultViewModelFactory(result)
         viewModel = ViewModelProvider(this, viewModelFactory)[ResultViewModel::class.java]
-        binding.resultViewModel = viewModel
 
-        binding.newGameButton.setOnClickListener {
-            view.findNavController().navigate(R.id.action_resultFragment_to_gameFragment)
+        return ComposeView(requireContext()).apply {
+            setContent {
+                MaterialTheme{
+                    Surface {
+                        view?.let { 
+                            ResultFragmentContent(view = it, viewModel = viewModel)
+                        }
+                    }
+                }
+            }
         }
-
-        return view
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        _binding = null
     }
 
     companion object {
@@ -84,3 +93,29 @@ class ResultFragment : Fragment() {
             }
     }
 }
+
+@Composable
+fun ResultText(result: String){
+    Text(
+        text = result,
+        fontSize = 28.sp,
+        textAlign = TextAlign.Center)
+}
+
+@Composable
+fun StartGameButton(action: () -> Unit){
+    Button(onClick = action) {
+        Text(text = "Start New Game")
+    }
+}
+
+@Composable
+fun ResultFragmentContent(view: View, viewModel: ResultViewModel){
+    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        ResultText(result = viewModel.result)
+        StartGameButton {
+            view.findNavController().navigate(R.id.action_resultFragment_to_gameFragment)
+        }
+    }
+}
+
